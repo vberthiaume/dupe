@@ -247,9 +247,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # ASan + RTSan route through lld (see notes below). UBSan and TSan
+          # use the default linker — they pass as-is and don't hit either
+          # lld-requiring edge case.
+          #
+          # ASan: gold's --gc-sections discards asan.module_ctor/dtor sections
+          # during LTO, leaving dangling refs in .init_array. lld handles the
+          # section-group semantics correctly.
+          #
+          # RTSan: its container lacks LLVMgold.so, which gold would need to
+          # link JUCE's `-flto` output. lld has built-in LTO, no plugin needed.
           - name: AddressSanitizer
             c_flags:      "-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g"
-            linker_flags: "-fsanitize=address -fsanitize=undefined"
+            linker_flags: "-fsanitize=address -fsanitize=undefined -fuse-ld=lld"
 
           - name: UndefinedBehaviorSanitizer
             c_flags:      "-fsanitize=undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g"
@@ -259,10 +269,6 @@ jobs:
             c_flags:      "-fsanitize=thread -fno-omit-frame-pointer -g"
             linker_flags: "-fsanitize=thread"
 
-          # `-fuse-ld=lld` sidesteps the missing LLVMgold.so in the container:
-          # lld has built-in LTO, so JUCE's `-flto` (emitted on CONFIG:Release
-          # via juce_recommended_lto_flags) links cleanly without the gold
-          # plugin.
           - name: RealtimeSanitizer
             c_flags:      "-fsanitize=realtime"
             linker_flags: "-fsanitize=realtime -fuse-ld=lld"
@@ -290,9 +296,24 @@ jobs:
         if: ${{ !matrix.container }}
         run: >-
           sudo apt-get update &&
-          sudo apt-get install -y ninja-build
+          sudo apt-get install -y ninja-build lld
           libasound2-dev libx11-dev libxinerama-dev libxext-dev
           libfreetype6-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev
+
+      # RTSan container ships a custom Clang but no lld; install it so the
+      # -fuse-ld=lld in linker_flags resolves. No-op on non-container runs
+      # since the apt step above already handled lld there.
+      - name: Ensure lld is available (container jobs)
+        if: ${{ matrix.container }}
+        run: |
+          if command -v ld.lld >/dev/null 2>&1; then
+            echo "lld already available at $(command -v ld.lld)"
+          elif command -v apt-get >/dev/null 2>&1; then
+            apt-get update && apt-get install -y lld
+          else
+            echo "No lld on PATH and no apt-get to install it. Bailing." >&2
+            exit 1
+          fi
 
       - name: Configure
         run: >-
