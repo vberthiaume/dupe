@@ -259,10 +259,14 @@ jobs:
             c_flags:      "-fsanitize=thread -fno-omit-frame-pointer -g"
             linker_flags: "-fsanitize=thread"
 
+          # `-fuse-ld=lld` sidesteps the missing LLVMgold.so in the container:
+          # lld has built-in LTO, so JUCE's `-flto` (emitted on CONFIG:Release
+          # via juce_recommended_lto_flags) links cleanly without the gold
+          # plugin.
           - name: RealtimeSanitizer
             c_flags:      "-fsanitize=realtime"
-            linker_flags: "-fsanitize=realtime"
-            container: ghcr.io/guillaumeriousat/algogris-rtsan:latest
+            linker_flags: "-fsanitize=realtime -fuse-ld=lld"
+            container:    ghcr.io/guillaumeriousat/algogris-rtsan:latest
 
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
@@ -303,8 +307,13 @@ jobs:
       - name: Build
         run: cmake --build Builds --target Tests
 
+      # Benchmarks.cmake's catch_discover_tests(Benchmarks) registers a
+      # "<name>_NOT_BUILT-<hash>" placeholder test whenever the Benchmarks
+      # binary is missing. Since we deliberately skip building Benchmarks under
+      # sanitizers (they're too slow to instrument), we filter that placeholder
+      # out of the ctest run rather than build the whole benchmark suite.
       - name: Test
-        run: ctest --test-dir Builds --output-on-failure --verbose
+        run: ctest --test-dir Builds --output-on-failure --verbose -E NOT_BUILT
 
   clang-tidy:
     name: clang-tidy
