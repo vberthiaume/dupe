@@ -247,16 +247,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # ASan + RTSan route through lld (see notes below). UBSan and TSan
-          # use the default linker — they pass as-is and don't hit either
-          # lld-requiring edge case.
+          # ASan and RTSan route through lld. UBSan and TSan use the default
+          # linker — they pass as-is.
           #
           # ASan: gold's --gc-sections discards asan.module_ctor/dtor sections
           # during LTO, leaving dangling refs in .init_array. lld handles the
           # section-group semantics correctly.
           #
-          # RTSan: its container lacks LLVMgold.so, which gold would need to
-          # link JUCE's `-flto` output. lld has built-in LTO, no plugin needed.
+          # RTSan: requires Clang 20+ (when -fsanitize=realtime shipped). We
+          # install clang-20/lld-20 from apt.llvm.org on a plain ubuntu-latest
+          # runner rather than using a prebuilt container (previous attempt
+          # used ghcr.io/guillaumeriousat/algogris-rtsan, but its custom Clang
+          # 20 + no bundled lld led to LTO bitcode version mismatches).
           - name: AddressSanitizer
             c_flags:      "-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g"
             linker_flags: "-fsanitize=address -fsanitize=undefined -fuse-ld=lld"
@@ -270,50 +272,50 @@ jobs:
             linker_flags: "-fsanitize=thread"
 
           - name: RealtimeSanitizer
+            cc:           clang-20
+            cxx:          clang++-20
             c_flags:      "-fsanitize=realtime"
-            linker_flags: "-fsanitize=realtime -fuse-ld=lld"
-            container:    ghcr.io/guillaumeriousat/algogris-rtsan:latest
+            linker_flags: "-fsanitize=realtime -fuse-ld=lld-20"
 
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
-    container: ${{ matrix.container || '' }}
     env:
       UBSAN_OPTIONS: "halt_on_error=1:abort_on_error=1"
+      CC:  ${{ matrix.cc  || 'clang' }}
+      CXX: ${{ matrix.cxx || 'clang++' }}
 
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
 
+      # Ubuntu's default clang (18) for ASan/UBSan/TSan. RTSan needs a newer
+      # compiler, handled below.
       - name: Set up Clang
-        if: ${{ !matrix.container }}
+        if: matrix.name != 'RealtimeSanitizer'
         uses: egor-tensin/setup-clang@v2
+
+      # RTSan requires Clang 20+ and a matching lld (apt's lld 18 can't read
+      # bitcode produced by clang-20 under LTO). apt.llvm.org's llvm.sh installs
+      # clang/lld/etc. for a pinned LLVM version from the upstream apt repo.
+      - name: Install Clang 20 + lld 20 (RTSan)
+        if: matrix.name == 'RealtimeSanitizer'
+        run: |
+          wget -qO llvm.sh https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 20
+          sudo apt-get install -y clang-20 lld-20
 
       # Tests links SharedCode, which pulls in juce_gui_basics/juce_gui_extra —
       # so we need the Linux GUI dev libraries even though we never build the
-      # standalone/plugin binaries themselves.
+      # standalone/plugin binaries themselves. lld is here for the ASan job
+      # (RTSan installed its own lld-20 above).
       - name: Install JUCE Linux dependencies
-        if: ${{ !matrix.container }}
         run: >-
           sudo apt-get update &&
           sudo apt-get install -y ninja-build lld
           libasound2-dev libx11-dev libxinerama-dev libxext-dev
           libfreetype6-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev
-
-      # RTSan container ships a custom Clang but no lld; install it so the
-      # -fuse-ld=lld in linker_flags resolves. No-op on non-container runs
-      # since the apt step above already handled lld there.
-      - name: Ensure lld is available (container jobs)
-        if: ${{ matrix.container }}
-        run: |
-          if command -v ld.lld >/dev/null 2>&1; then
-            echo "lld already available at $(command -v ld.lld)"
-          elif command -v apt-get >/dev/null 2>&1; then
-            apt-get update && apt-get install -y lld
-          else
-            echo "No lld on PATH and no apt-get to install it. Bailing." >&2
-            exit 1
-          fi
 
       - name: Configure
         run: >-
