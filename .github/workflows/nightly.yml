@@ -1,6 +1,5 @@
-# This workflow is for the Pamplejuce template repo itself (sudara/pamplejuce).
-# It runs a nightly build to catch issues with dependencies, JUCE updates, etc.
-# If you're using this template for your own plugin, feel free to delete this file.
+# Nightly scheduled build. Useful for catching issues with submodule (JUCE, etc.)
+# or toolchain drift that wouldn't otherwise hit CI between commits.
 name: Nightly
 
 on:
@@ -9,7 +8,5 @@ on:
 
 jobs:
   nightly:
-    # Only run on the original Pamplejuce repo, not forks or template copies
-    if: github.repository == 'sudara/pamplejuce'
     uses: ./.github/workflows/build_and_test.yml
     secrets: inherit
