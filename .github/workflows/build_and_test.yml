@@ -238,10 +238,11 @@ jobs:
           path: packaging/${{ env.ARTIFACT_NAME }}.pkg
 
   sanitizers:
-    # Build the Tests target (only) with runtime sanitizers enabled.
-    # DUPE_BUILD_PLUGIN=OFF skips the JUCE plugin target so we don't drag every
-    # plugin format through an instrumented build — SharedCode + Tests is enough
-    # to exercise our own code.
+    # Build *only* the Tests target (via cmake --build --target Tests) with
+    # runtime sanitizers enabled. juce_add_plugin still runs at configure time
+    # (Tests.cmake / Benchmarks.cmake read COMPILE_DEFINITIONS off the plugin
+    # target), but the AU/VST3/Standalone format targets are never built because
+    # they're not a dependency of Tests.
     strategy:
       fail-fast: false
       matrix:
@@ -278,8 +279,9 @@ jobs:
         if: ${{ !matrix.container }}
         uses: egor-tensin/setup-clang@v2
 
-      # JUCE modules (juce_gui_basics, juce_gui_extra) still get configured even
-      # with DUPE_BUILD_PLUGIN=OFF, so we need the Linux GUI dev libraries.
+      # Tests links SharedCode, which pulls in juce_gui_basics/juce_gui_extra —
+      # so we need the Linux GUI dev libraries even though we never build the
+      # standalone/plugin binaries themselves.
       - name: Install JUCE Linux dependencies
         if: ${{ !matrix.container }}
         run: >-
@@ -293,7 +295,6 @@ jobs:
           cmake -B Builds
           -G Ninja
           -DCMAKE_BUILD_TYPE=Release
-          -DDUPE_BUILD_PLUGIN=OFF
           -DCMAKE_C_FLAGS="${{ matrix.c_flags }}"
           -DCMAKE_CXX_FLAGS="${{ matrix.c_flags }}"
           -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.linker_flags }}"
