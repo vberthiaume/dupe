@@ -30,6 +30,11 @@ set(BUNDLE_ID "com.vincentberthiaume.dupe")
 # Valid choices: AAX Unity VST VST3 AU AUv3 Standalone
 set(FORMATS Standalone AU VST3 AUv3)
 
+# Turn this OFF to skip building the plugin/CLAP targets — Tests still builds.
+# Used by the sanitizer CI matrix so sanitizers don't have to drag every plugin
+# format (and all its platform-specific packaging) through an instrumented build.
+option(DUPE_BUILD_PLUGIN "Build the JUCE plugin target" ON)
+
 # Force JUCE to work with sccache
 # instruct MSVC to embed debug info (/Z7) instead of emitting a .pdb
 set(CMAKE_POLICY_DEFAULT_CMP0141        NEW      CACHE STRING "" FORCE)
@@ -57,36 +62,38 @@ add_subdirectory(modules/clap-juce-extensions EXCLUDE_FROM_ALL)
 add_subdirectory (modules/melatonin_inspector)
 
 # See `docs/CMake API.md` in the JUCE repo for all config options
-juce_add_plugin("${PROJECT_NAME}"
-    # Icons for the standalone app
-    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/packaging/icon.png"
+if(DUPE_BUILD_PLUGIN)
+    juce_add_plugin("${PROJECT_NAME}"
+        # Icons for the standalone app
+        ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/packaging/icon.png"
 
-    COMPANY_NAME "${COMPANY_NAME}"
-    BUNDLE_ID "${BUNDLE_ID}"
+        COMPANY_NAME "${COMPANY_NAME}"
+        BUNDLE_ID "${BUNDLE_ID}"
 
-    # On MacOS, plugin is copied to /Users/yourname/Library/Audio/Plug-Ins/
-    COPY_PLUGIN_AFTER_BUILD TRUE
+        # On MacOS, plugin is copied to /Users/yourname/Library/Audio/Plug-Ins/
+        COPY_PLUGIN_AFTER_BUILD TRUE
 
-    # A four-character manufacturer id. First char MUST be uppercase for AU.
-    PLUGIN_MANUFACTURER_CODE BMP4
+        # A four-character manufacturer id. First char MUST be uppercase for AU.
+        PLUGIN_MANUFACTURER_CODE BMP4
 
-    # A unique four-character plugin id. Must have at least one uppercase char.
-    PLUGIN_CODE Dupe
-    FORMATS "${FORMATS}"
+        # A unique four-character plugin id. Must have at least one uppercase char.
+        PLUGIN_CODE Dupe
+        FORMATS "${FORMATS}"
 
-    # The name of your final executable
-    # This is how it's listed in the DAW
-    # This can be different from PROJECT_NAME and can have spaces!
-    # You might want to use v${MAJOR_VERSION} here once you go to v2...
-    PRODUCT_NAME "${PRODUCT_NAME}")
+        # The name of your final executable
+        # This is how it's listed in the DAW
+        # This can be different from PROJECT_NAME and can have spaces!
+        # You might want to use v${MAJOR_VERSION} here once you go to v2...
+        PRODUCT_NAME "${PRODUCT_NAME}")
+
+    clap_juce_extensions_plugin(TARGET "${PROJECT_NAME}"
+        CLAP_ID "${BUNDLE_ID}"
+        CLAP_FEATURES audio-effect)
+endif()
 
 # This lets us use our code in both the JUCE targets and our Test target
 # Without running into ODR violations
 add_library(SharedCode INTERFACE)
-
-clap_juce_extensions_plugin(TARGET "${PROJECT_NAME}"
-    CLAP_ID "${BUNDLE_ID}"
-    CLAP_FEATURES audio-effect)
 
 # Enable fast math, C++20 and a few other target defaults
 include(SharedCodeDefaults)
@@ -145,7 +152,9 @@ target_link_libraries(SharedCode
     juce::juce_recommended_warning_flags)
 
 # Link the JUCE plugin targets our SharedCode target
-target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
+if(DUPE_BUILD_PLUGIN)
+    target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
+endif()
 
 # IPP support, comment out to disable
 include(PamplejuceIPP)

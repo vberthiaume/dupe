@@ -237,6 +237,146 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}.pkg
           path: packaging/${{ env.ARTIFACT_NAME }}.pkg
 
+  sanitizers:
+    # Build the Tests target (only) with runtime sanitizers enabled.
+    # DUPE_BUILD_PLUGIN=OFF skips the JUCE plugin target so we don't drag every
+    # plugin format through an instrumented build — SharedCode + Tests is enough
+    # to exercise our own code.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: AddressSanitizer
+            c_flags:      "-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g"
+            linker_flags: "-fsanitize=address -fsanitize=undefined"
+
+          - name: UndefinedBehaviorSanitizer
+            c_flags:      "-fsanitize=undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g"
+            linker_flags: "-fsanitize=undefined"
+
+          - name: ThreadSanitizer
+            c_flags:      "-fsanitize=thread -fno-omit-frame-pointer -g"
+            linker_flags: "-fsanitize=thread"
+
+          - name: RealtimeSanitizer
+            c_flags:      "-fsanitize=realtime"
+            linker_flags: "-fsanitize=realtime"
+            container: ghcr.io/guillaumeriousat/algogris-rtsan:latest
+
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container || '' }}
+    env:
+      UBSAN_OPTIONS: "halt_on_error=1:abort_on_error=1"
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Clang
+        if: ${{ !matrix.container }}
+        uses: egor-tensin/setup-clang@v2
+
+      # JUCE modules (juce_gui_basics, juce_gui_extra) still get configured even
+      # with DUPE_BUILD_PLUGIN=OFF, so we need the Linux GUI dev libraries.
+      - name: Install JUCE Linux dependencies
+        if: ${{ !matrix.container }}
+        run: >-
+          sudo apt-get update &&
+          sudo apt-get install -y ninja-build
+          libasound2-dev libx11-dev libxinerama-dev libxext-dev
+          libfreetype6-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev
+
+      - name: Configure
+        run: >-
+          cmake -B Builds
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DDUPE_BUILD_PLUGIN=OFF
+          -DCMAKE_C_FLAGS="${{ matrix.c_flags }}"
+          -DCMAKE_CXX_FLAGS="${{ matrix.c_flags }}"
+          -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.linker_flags }}"
+          -DCMAKE_SHARED_LINKER_FLAGS="${{ matrix.linker_flags }}"
+
+      - name: Build
+        run: cmake --build Builds --target Tests
+
+      - name: Test
+        run: ctest --test-dir Builds --output-on-failure --verbose
+
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write   # needed to post PR review comments
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0     # cpp-linter needs history to diff changed files
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Install JUCE Linux dependencies
+        run: >-
+          sudo apt-get install -y
+          libasound2-dev libx11-dev libxinerama-dev libxext-dev
+          libfreetype6-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev
+
+      # Configure with the plugin target enabled so compile_commands.json covers
+      # every one of our source files (plugin + tests).
+      - name: Configure
+        run: >-
+          cmake -B Builds
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      # Build so JUCE's juceaide-generated headers exist on disk before tidy
+      # tries to parse includes referencing them.
+      - name: Build
+        run: cmake --build Builds -j
+
+      # cpp-linter runs clang-tidy and posts findings as PR review comments
+      # (on pull_request) or a step summary (on push). It uses .clang-tidy
+      # from the repo root and compile_commands.json from Builds/.
+      - uses: cpp-linter/cpp-linter-action@v2
+        id: linter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          style: ''                  # don't run clang-format
+          tidy-checks: ''            # use project .clang-tidy
+          database: Builds
+          files-changed-only: false
+          # Only post a summary comment on PRs. On push events cpp-linter would
+          # try to post a commit comment, which needs contents:write — not
+          # worth the broader token scope since the Actions step summary already
+          # shows push-run results.
+          thread-comments: ${{ github.event_name == 'pull_request' }}
+          tidy-review: true
+          step-summary: true
+          extensions: cpp,h
+          # Skip build output, JUCE, submodules, cmake includes, and CI configs.
+          # We only want tidy to look at our own source tree (source/, tests/,
+          # benchmarks/).
+          ignore: 'Builds|JUCE|modules|cmake|.github'
+
+      # Step exits 1 when tidy finds anything, but continue-on-error keeps the
+      # job green — the step still shows a ⚠️ in the Actions UI and findings
+      # appear in the step summary / PR comments. Drop continue-on-error to
+      # turn tidy findings into hard merge blockers.
+      - name: Fail on tidy issues
+        if: steps.linter.outputs.checks-failed > 0
+        continue-on-error: true
+        run: |
+          echo "clang-tidy reported issues — see PR comments / step summary."
+          exit 1
+
   release:
     if: contains(github.ref, 'tags/v')
     runs-on: ubuntu-latest
