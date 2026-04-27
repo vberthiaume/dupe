@@ -54,7 +54,6 @@ On macOS for universal binary: `-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"`
 - `Assets.cmake` - Auto-includes all files in assets/ as binary data
 - `Tests.cmake` - Configures Catch2 test target
 - `Benchmarks.cmake` - Configures Catch2 benchmark target
-- `PamplejuceIPP.cmake` - Intel IPP integration (optional)
 
 **Test Discovery**: Uses `catch_discover_tests()` with `PRE_TEST` discovery mode for Xcode compatibility.
 
