@@ -20,7 +20,7 @@ namespace
     }
 }
 
-TEST_CASE ("MicroPitchShifter — output stays bounded for white noise input", "[dsp][shifter]")
+TEST_CASE ("MicroPitchShifter:output stays bounded for white noise input", "[dsp][shifter]")
 {
     MicroPitchShifter<float> shifter;
     shifter.prepare (makeSpec());
@@ -41,7 +41,7 @@ TEST_CASE ("MicroPitchShifter — output stays bounded for white noise input", "
     REQUIRE (peak < 1.5f);
 }
 
-TEST_CASE ("MicroPitchShifter — DC input remains DC after settling", "[dsp][shifter]")
+TEST_CASE ("MicroPitchShifter:DC input remains DC after settling", "[dsp][shifter]")
 {
     MicroPitchShifter<float> shifter;
     shifter.prepare (makeSpec());
@@ -63,7 +63,7 @@ TEST_CASE ("MicroPitchShifter — DC input remains DC after settling", "[dsp][sh
     }
 }
 
-TEST_CASE ("MicroPitchShifter — shifts a sine wave's frequency", "[dsp][shifter]")
+TEST_CASE ("MicroPitchShifter:shifts a sine wave's frequency", "[dsp][shifter]")
 {
     constexpr double sampleRate = 44100.0;
     constexpr float  inputFreq  = 440.0f;   // A4
@@ -105,7 +105,7 @@ TEST_CASE ("MicroPitchShifter — shifts a sine wave's frequency", "[dsp][shifte
     // 2 zero crossings per cycle → freq ≈ crossings/2.
     const float measured = static_cast<float> (crossings) * 0.5f;
 
-    // Allow ±2 Hz tolerance — small chorus modulation from the wrap rate adds
+    // Allow ±2 Hz tolerance:small chorus modulation from the wrap rate adds
     // a tiny amount of jitter to the perceived pitch.
     REQUIRE_THAT (measured, Catch::Matchers::WithinAbs (expected, 2.0f));
 }
