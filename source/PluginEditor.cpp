@@ -3,46 +3,71 @@
 PluginEditor::PluginEditor (PluginProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p)
 {
-    juce::ignoreUnused (processorRef);
+    auto setupRotary = [this] (juce::Slider& s)
+    {
+        addAndMakeVisible (s);
+        s.setSliderStyle (juce::Slider::RotaryVerticalDrag);
+        s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 80, 20);
+    };
+
+    setupRotary (pitchSlider);
+    setupRotary (mixSlider);
+
+    pitchAttachment = std::make_unique<SliderAttachment> (
+        processorRef.apvts, Parameters::pitchID, pitchSlider);
+    mixAttachment = std::make_unique<SliderAttachment> (
+        processorRef.apvts, Parameters::mixID, mixSlider);
+
+    addAndMakeVisible (monoListenButton);
+    monoListenAttachment = std::make_unique<ButtonAttachment> (
+        processorRef.apvts, Parameters::monoListenID, monoListenButton);
+
+    auto setupLabel = [this] (juce::Label& l)
+    {
+        addAndMakeVisible (l);
+        l.setJustificationType (juce::Justification::centred);
+    };
+
+    setupLabel (pitchLabel);
+    setupLabel (mixLabel);
 
     addAndMakeVisible (inspectButton);
-
-    // this chunk of code instantiates and opens the melatonin inspector
-    inspectButton.onClick = [&] {
-        if (!inspector)
+    inspectButton.onClick = [this]
+    {
+        if (! inspector)
         {
             inspector = std::make_unique<melatonin::Inspector> (*this);
-            inspector->onClose = [this]() { inspector.reset(); };
+            inspector->onClose = [this] { inspector.reset(); };
         }
-
         inspector->setVisible (true);
     };
 
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize (400, 300);
+    setSize (420, 280);
 }
 
-PluginEditor::~PluginEditor()
-{
-}
+PluginEditor::~PluginEditor() = default;
 
 void PluginEditor::paint (juce::Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-
-    auto area = getLocalBounds();
-    g.setColour (juce::Colours::white);
-    g.setFont (16.0f);
-    auto helloWorld = juce::String ("Hello from ") + PRODUCT_NAME_WITHOUT_VERSION + " v" VERSION + " running in " + CMAKE_BUILD_TYPE;
-    g.drawText (helloWorld, area.removeFromTop (150), juce::Justification::centred, false);
 }
 
 void PluginEditor::resized()
 {
-    // layout the positions of your child components here
-    auto area = getLocalBounds();
-    area.removeFromBottom(50);
-    inspectButton.setBounds (getLocalBounds().withSizeKeepingCentre(100, 50));
+    auto area = getLocalBounds().reduced (12);
+
+    auto bottom = area.removeFromBottom (30);
+    inspectButton.setBounds (bottom.removeFromRight (140));
+    monoListenButton.setBounds (bottom.removeFromLeft (140));
+
+    area.removeFromBottom (8);
+
+    auto knobs = area;
+    auto pitchArea = knobs.removeFromLeft (knobs.getWidth() / 2);
+
+    pitchLabel.setBounds (pitchArea.removeFromTop (24));
+    pitchSlider.setBounds (pitchArea);
+
+    mixLabel.setBounds (knobs.removeFromTop (24));
+    mixSlider.setBounds (knobs);
 }
