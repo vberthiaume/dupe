@@ -15,16 +15,16 @@ include(JUCEDefaults)
 
 # Internal name of the project and the name of JUCE's shared code target.
 # Cannot have spaces. JUCE's PRODUCT_NAME (below) is what DAWs display and can have spaces.
-set(PROJECT_NAME "Dupe")
+set(PROJECT_NAME "Starty")
 
 # The name that will show up in DAWs. Can have spaces.
-set(PRODUCT_NAME "Dupe")
+set(PRODUCT_NAME "Starty")
 
 # Used for the MacOS bundle name and Installers
-set(COMPANY_NAME "Vincent Berthiaume")
+set(COMPANY_NAME "BMP4")
 
 # Used for the MacOS bundle identifier (and signing)
-set(BUNDLE_ID "com.vincentberthiaume.dupe")
+set(BUNDLE_ID "com.bmp4.starty")
 
 # Plugin formats to build
 # Valid choices: AAX Unity VST VST3 AU AUv3 Standalone
@@ -71,7 +71,7 @@ juce_add_plugin("${PROJECT_NAME}"
     PLUGIN_MANUFACTURER_CODE BMP4
 
     # A unique four-character plugin id. Must have at least one uppercase char.
-    PLUGIN_CODE Dupe
+    PLUGIN_CODE Star
     FORMATS "${FORMATS}"
 
     # The name of your final executable
@@ -120,7 +120,7 @@ target_compile_definitions(SharedCode
     VERSION="${CURRENT_VERSION}"
 
     # JucePlugin_Name is for some reason doesn't use the nicer PRODUCT_NAME
-    PRODUCT_NAME_WITHOUT_VERSION="Dupe"
+    PRODUCT_NAME_WITHOUT_VERSION="Starty"
 )
 
 # Link to any other modules you added (with juce_add_module) here!

@@ -1,11 +1,11 @@
 [![Build](https://github.com/vberthiaume/dupe/actions/workflows/build_and_test.yml/badge.svg?branch=main)](https://github.com/vberthiaume/dupe/actions/workflows/build_and_test.yml)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-# Dupe — JUCE plugin starter
+# Starty — JUCE plugin starter
 
-A starting point for a new JUCE audio-plugin project. Adds a CI sanitizer matrix (ASan, UBSan, TSan, RTSan), clang-tidy as a PR-comment bot, RTSan-aware attribute macros, and a clang-format pre-commit hook to the [Pamplejuce](https://github.com/sudara/pamplejuce) template. The placeholder plugin name is `Dupe` — see [Rename](#rename-dupe--your-plugin-name) for what to change when forking.
+A starting point for a new JUCE audio-plugin project. Adds a CI sanitizer matrix (ASan, UBSan, TSan, RTSan), clang-tidy as a PR-comment bot, RTSan-aware attribute macros, and a clang-format pre-commit hook to the [Pamplejuce](https://github.com/sudara/pamplejuce) template. The placeholder plugin name is `Starty` — see [Rename](#rename-starty--your-plugin-name) for what to change when forking.
 
-## Rename `Dupe` → your plugin name
+## Rename `Starty` → your plugin name
 
 Pick names. Example values for a hypothetical "Spangle" plugin by "Acme Audio":
 
@@ -24,15 +24,15 @@ Then update each of these locations:
 |---|---|
 | `CMakeLists.txt` | `PROJECT_NAME`, `PRODUCT_NAME`, `COMPANY_NAME`, `BUNDLE_ID`, `PLUGIN_MANUFACTURER_CODE`, `PLUGIN_CODE`, `PRODUCT_NAME_WITHOUT_VERSION` |
 | `tests/PluginBasics.cpp` | The expected name string in the `Plugin instance` test |
-| `packaging/dmg.json` | `title`, `icon`, and the `dmg/Dupe.*` paths |
+| `packaging/dmg.json` | `title`, `icon`, and the `dmg/Starty.*` paths |
 | `packaging/resources/README` | Installer thank-you text |
-| `packaging/dupe.icns` | Rename file to match new product name **and** replace the image with your own. The macOS CI workflow uses this to brand the `.vst3`/`.au`/`.clap` bundles with a custom Finder icon — leave the placeholder and your plugins will look like the Dupe template. Also update the `sips`/`DeRez` lines in `.github/workflows/build_and_test.yml` to point at the renamed file. |
+| `packaging/starty.icns` | Rename file to match new product name **and** replace the image with your own. The macOS CI workflow uses this to brand the `.vst3`/`.au`/`.clap` bundles with a custom Finder icon — leave the placeholder and your plugins will look like the Starty template. Also update the `sips`/`DeRez` lines in `.github/workflows/build_and_test.yml` to point at the renamed file. |
 | `packaging/icon.png` | Generic placeholder used as `ICON_BIG` for the Standalone app (referenced from `CMakeLists.txt`). Replace the image with your own; the filename can stay since it's not name-specific. |
 | `.github/workflows/build_and_test.yml` | Workflow `name:` (line 1) |
 | `README.md` | Build badge URL (point at your repo), `License` section copyright line, the title at the top |
 | `LICENSE` / `README.md` License section | Update the copyright holder if appropriate |
 
-Shortcut: editor-wide case-aware find-and-replace of `Dupe` → `Spangle` and `dupe` → `spangle`, then double-check that the `.icns` got renamed — most find/replace tools skip binary files.
+Shortcut: editor-wide case-aware find-and-replace of `Starty` → `Spangle` and `starty` → `spangle`, then double-check that the `.icns` got renamed — most find/replace tools skip binary files.
 
 ## Install dependencies
 ### macOS
@@ -96,7 +96,7 @@ Every push and PR triggers:
 `nightly.yml` runs the same fan-out daily at 10:00 UTC, to catch external drift (JUCE submodule on `develop`, apt packages, GitHub runner images) between commits. Disable by commenting out the `schedule:` block in that file if you don't want the daily runs.
 
 ## License
-Dupe is released under the [GNU Affero General Public License, version 3](LICENSE) (AGPLv3). Copyright (C) 2026 Vincent Berthiaume.
+Starty is released under the [GNU Affero General Public License, version 3](LICENSE) (AGPLv3). Copyright (C) 2026 Vincent Berthiaume.
 
 This project links against [JUCE](https://juce.com/), used under the AGPLv3 free-use option of JUCE Ltd's dual-license terms.
 
