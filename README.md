@@ -2,12 +2,12 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 # Dupe — JUCE plugin starter
-This repository is meant to be **cloned (or used as a template) as the starting point for a new JUCE audio-plugin project**. It's derived from [Pamplejuce](https://github.com/sudara/pamplejuce) with extra tooling layered on: sanitizer matrix in CI, clang-tidy as a PR-comment bot, RTSan-aware attribute macros, an opinionated VS Code dev loop, and a pre-commit hook that enforces clang-format. The placeholder plugin name throughout is `Dupe`; the [Rename](#rename-dupe--your-plugin-name) section below lists everything to rename when you fork it for your own plugin.
+
+A starting point for a new JUCE audio-plugin project. Adds a CI sanitizer matrix (ASan, UBSan, TSan, RTSan), clang-tidy as a PR-comment bot, RTSan-aware attribute macros, and a clang-format pre-commit hook to the [Pamplejuce](https://github.com/sudara/pamplejuce) template. The placeholder plugin name is `Dupe` — see [Rename](#rename-dupe--your-plugin-name) for what to change when forking.
 
 ## Rename `Dupe` → your plugin name
-Here's how to rename everything in this repo after you've cloned it and fetched all submodules.
 
-Pick four identifiers up front. Recommended values shown for a hypothetical "Spangle" plugin by "Acme Audio":
+Pick names. Example values for a hypothetical "Spangle" plugin by "Acme Audio":
 
 | Identifier | What it is | Example |
 |---|---|---|
@@ -32,7 +32,7 @@ Then update each of these locations:
 | `README.md` | Build badge URL (point at your repo), `License` section copyright line, the title at the top |
 | `LICENSE` / `README.md` License section | Update the copyright holder if appropriate |
 
-A reasonable shortcut: open the repo in your editor and do a case-aware find-and-replace of `Dupe` → `Spangle` and `dupe` → `spangle`, then verify the `.icns` file actually got renamed (find/replace tools usually skip binary file renames).
+Shortcut: editor-wide case-aware find-and-replace of `Dupe` → `Spangle` and `dupe` → `spangle`, then double-check that the `.icns` got renamed — most find/replace tools skip binary files.
 
 ## Install dependencies
 ### macOS
@@ -58,13 +58,12 @@ Install in this order:
 4. **[Git for Windows](https://git-scm.com/download/win)** if you don't already have it.
 
 ## Install the pre-commit hook
-One-time, per clone. The hook lives in `.githooks/pre-commit` and refuses commits whose staged C/C++ files aren't clang-format clean:
+
+One-time, per clone. Refuses commits whose staged C/C++ files aren't clang-format clean (see `.githooks/pre-commit`):
 
 ```bash
 git config core.hooksPath .githooks
 ```
-
-Verify with `git config --get core.hooksPath` — should print `.githooks`. The hook self-documents its install instructions at the top of the file.
 
 ## Build
 ```bash
@@ -88,12 +87,13 @@ assets/sounds/click.wav  →  BinaryData::click_wav  +  BinaryData::click_wavSiz
 Wired up by `cmake/Assets.cmake` (a recursive glob). `juce_add_binary_data()` requires at least one source file, which is why we ship the placeholder rather than leaving the folder empty.
 
 ## CI
-Push to any branch or open a PR to trigger the full CI fan-out:
-- `build_and_test` — three platforms (Linux/macOS/Windows), `pluginval` validation, artifact upload
+
+Every push and PR triggers:
+- `build_and_test` — Linux/macOS/Windows, `pluginval` validation, artifact upload
 - `sanitizers` — ASan / UBSan / TSan / RTSan (clang-20 for the latter)
 - `clang-tidy` — posts review comments on PRs
 
-The nightly workflow (`nightly.yml`) is currently disabled. Re-enable by uncommenting the cron block when active development pauses and external dependency drift becomes the main breakage risk.
+`nightly.yml` runs the same fan-out daily at 10:00 UTC, to catch external drift (JUCE submodule on `develop`, apt packages, GitHub runner images) between commits. Disable by commenting out the `schedule:` block in that file if you don't want the daily runs.
 
 ## License
 Dupe is released under the [GNU Affero General Public License, version 3](LICENSE) (AGPLv3). Copyright (C) 2026 Vincent Berthiaume.

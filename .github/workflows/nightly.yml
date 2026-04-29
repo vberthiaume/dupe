@@ -3,12 +3,8 @@
 name: Nightly
 
 on:
-  # Nightly cron disabled while dupe is under active push-driven CI — the
-  # marginal value of a daily build is low when commits land regularly.
-  # Re-enable (uncomment the schedule block) once active development pauses
-  # and external drift becomes the main breakage risk.
-  # schedule:
-  #   - cron: '0 10 * * *'
+  schedule:
+    - cron: '0 10 * * *'
   workflow_dispatch:
 
 jobs:
