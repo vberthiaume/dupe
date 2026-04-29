@@ -46,6 +46,23 @@ Then check out the [documentation](https://melatonin.dev/manuals/pamplejuce/sett
 > [!NOTE]
 > Tests will immediately run and fail (go red) until you [set up code signing](https://melatonin.dev/manuals/pamplejuce/getting-started/code-signing/).
 
+## Pre-commit hook
+
+A clang-format pre-commit hook lives in `.githooks/pre-commit` and refuses commits whose staged C/C++ files aren't formatted per `.clang-format`.
+
+Install `clang-format` (the hook depends on it being on PATH):
+- **macOS:** `brew install clang-format` (Apple's bundled clang doesn't ship it as a separate binary)
+- **Linux (Ubuntu/Debian):** `sudo apt install clang-format`
+- **Windows:** ships with Visual Studio's "Desktop development with C++" workload, or with LLVM
+
+Then enable the hook (one-time, per clone):
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Verify with `git config --get core.hooksPath` — should print `.githooks`.
+
 ## Having Issues?
 
 Thanks to everyone who has contributed to the repository. 
