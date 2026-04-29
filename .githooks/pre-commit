@@ -3,11 +3,6 @@
 #
 # Install (one-time):
 #   git config core.hooksPath .githooks
-#
-# This deliberately checks rather than auto-formats: auto-formatting staged
-# content gets confusing fast (the working tree and the staged content can
-# diverge), and surfacing the issue with a clear "run this to fix it" message
-# is less surprising.
 
 set -euo pipefail
 
@@ -20,11 +15,14 @@ fi
 
 # Only consider files inside our owned trees — submodules and generated dirs
 # are skipped by virtue of not appearing here.
-mapfile -t staged < <(
-    git diff --cached --name-only --diff-filter=ACM \
-    | grep -E '^(source|tests|benchmarks)/.*\.(cpp|h|hpp|cc|c|cxx|hxx)$' \
-    || true
-)
+#
+# `mapfile` would be cleaner but doesn't exist in Bash 3.2 (macOS's default).
+staged=()
+while IFS= read -r line; do
+    [[ -n "$line" ]] && staged+=("$line")
+done < <(git diff --cached --name-only --diff-filter=ACM \
+         | grep -E '^(source|tests|benchmarks)/.*\.(cpp|h|hpp|cc|c|cxx|hxx)$' \
+         || true)
 
 if [[ ${#staged[@]} -eq 0 ]]; then
     exit 0
@@ -32,18 +30,16 @@ fi
 
 unformatted=()
 for f in "${staged[@]}"; do
-    # Compare clang-format output against the working-tree file.
-    # (We're not checking the staged blob — small footgun if the working tree
-    # has uncommitted format-only changes ahead of staged content. Worth it
-    # for the simplicity; CI's clang-tidy job would catch anything that slips.)
-    if ! diff -q <(clang-format "$f") "$f" >/dev/null 2>&1; then
+    if ! clang-format --dry-run --Werror "$f" >/dev/null 2>&1; then
         unformatted+=("$f")
     fi
 done
 
 if [[ ${#unformatted[@]} -gt 0 ]]; then
-    echo "pre-commit: clang-format would change the following staged files:" >&2
-    printf '  %s\n' "${unformatted[@]}" >&2
+    echo "pre-commit: clang-format violations in staged files:" >&2
+    for f in "${unformatted[@]}"; do
+        clang-format --dry-run --Werror "$f" 2>&1 | sed 's/^/  /' >&2 || true
+    done
     echo >&2
     echo "Fix with:" >&2
     echo "  clang-format -i ${unformatted[*]}" >&2
