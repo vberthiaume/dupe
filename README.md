@@ -1,58 +1,123 @@
-![PAMPLEJUCE](assets/images/pamplejuce.png)
-[![](https://github.com/sudara/pamplejuce/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/sudara/pamplejuce/actions)
+[![Build](https://github.com/vberthiaume/dupe/actions/workflows/build_and_test.yml/badge.svg?branch=main)](https://github.com/vberthiaume/dupe/actions/workflows/build_and_test.yml)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-Pamplejuce is a ~~template~~ lifestyle for creating and building JUCE plugins in 2026.
+# Dupe — JUCE plugin starter
 
-Out-of-the-box, it:
+This repository is meant to be **cloned (or used as a template) as the starting point for a new JUCE audio-plugin project**. It's derived from [Pamplejuce](https://github.com/sudara/pamplejuce) with extra tooling layered on: sanitizer matrix in CI, clang-tidy as a PR-comment bot, RTSan-aware attribute macros, an opinionated VS Code dev loop, and a pre-commit hook that enforces clang-format. The placeholder plugin name throughout is `Dupe`; the [Getting started](#getting-started) section below lists everything to rename when you fork it for your own plugin.
 
-1. Runs C++23
-2. Uses JUCE 8.x as a git submodule (tracking develop).
-3. Uses CPM for dependency management.
-3. Relies on CMake 3.25 and higher for cross-platform building.
-4. Has [Catch2](https://github.com/catchorg/Catch2) v3.7.1 for the test framework and runner.
-5. Includes a `Tests` target and a `Benchmarks` target with examples to get started quickly.
-6. Has [Melatonin Inspector](https://github.com/sudara/melatonin_inspector) installed as a JUCE module to help relieve headaches when building plugin UI.
+# Rename `Dupe` → your plugin name
 
-It also has integration with GitHub Actions, specifically:
+Here's how to rename everything in this repo after you've cloned it and fetchee all submodules.
 
-1. Building and testing cross-platform (linux, macOS, Windows) binaries
-2. Running tests and benchmarks in CI
-3. Running [pluginval](http://github.com/tracktion/pluginval) 1.x against the binaries for plugin validation
-4. Config for [installing Intel IPP](https://www.intel.com/content/www/us/en/developer/tools/oneapi/ipp.html)
-5. [Code signing and notarization on macOS](https://melatonin.dev/blog/how-to-code-sign-and-notarize-macos-audio-plugins-in-ci/)
-6. [Windows code signing via Azure Trusted Signing](https://melatonin.dev/blog/code-signing-on-windows-with-azure-trusted-signing/)
+Pick four identifiers up front. Recommended values shown for a hypothetical "Spangle" plugin by "Acme Audio":
 
-It also contains:
+| Identifier | What it is | Example |
+|---|---|---|
+| `PROJECT_NAME` | Internal CMake target name (no spaces) | `Spangle` |
+| `PRODUCT_NAME` | Display name shown in DAWs (spaces OK) | `Spangle` |
+| `COMPANY_NAME` | Manufacturer | `Acme Audio` |
+| `BUNDLE_ID` | macOS reverse-DNS bundle id | `com.acmeaudio.spangle` |
+| `PLUGIN_MANUFACTURER_CODE` | 4 chars, **first uppercase** | `Acme` |
+| `PLUGIN_CODE` | 4 chars, ≥1 uppercase, unique per plugin | `Spgl` |
 
-1. A `.gitignore` for all platforms.
-2. A `.clang-format` file for keeping code tidy.
-3. A `VERSION` file that will propagate through JUCE and your app.
-4. A ton of useful comments and options around the CMake config.
+Then update each of these locations:
 
-## How does this all work at a high level?
+| File | Change |
+|---|---|
+| `CMakeLists.txt` | `PROJECT_NAME`, `PRODUCT_NAME`, `COMPANY_NAME`, `BUNDLE_ID`, `PLUGIN_MANUFACTURER_CODE`, `PLUGIN_CODE`, `PRODUCT_NAME_WITHOUT_VERSION` |
+| `tests/PluginBasics.cpp` | The expected name string in the `Plugin instance` test |
+| `packaging/dmg.json` | `title`, `icon`, and the `dmg/Dupe.*` paths |
+| `packaging/resources/README` | Installer thank-you text |
+| `packaging/dupe.icns` | Rename file to match new product name **and** replace the image with your own. The macOS CI workflow uses this to brand the `.vst3`/`.au`/`.clap` bundles with a custom Finder icon — leave the placeholder and your plugins will look like the Dupe template. Also update the `sips`/`DeRez` lines in `.github/workflows/build_and_test.yml` to point at the renamed file. |
+| `packaging/icon.png` | Generic placeholder used as `ICON_BIG` for the Standalone app (referenced from `CMakeLists.txt`). Replace the image with your own; the filename can stay since it's not name-specific. |
+| `.github/workflows/build_and_test.yml` | Workflow `name:` (line 1) |
+| `.vscode/launch.json` | Replace `Dupe_artefacts` and `Dupe.app` / `Dupe.exe` / `Dupe` paths |
+| `README.md` | Build badge URL (point at your repo), `License` section copyright line, the title at the top |
+| `LICENSE` / `README.md` License section | Update the copyright holder if appropriate |
 
-Check out the [official Pamplejuce documentation](https://melatonin.dev/manuals/pamplejuce/how-does-this-all-work/).
+A reasonable shortcut: open the repo in your editor and do a case-aware find-and-replace of `Dupe` → `Spangle` and `dupe` → `spangle`, then verify the `.icns` file actually got renamed (find/replace tools usually skip binary file renames).
 
-[![Arc - 2024-10-01 51@2x](https://github.com/user-attachments/assets/01d19d2d-fbac-481f-8cec-e9325b2abe57)](https://melatonin.dev/manuals/pamplejuce/how-does-this-all-work/)
+# 3. Install dependencies
 
-## Setting up for YOUR project
+## macOS
+```bash
+xcode-select --install         # Apple's clang + git + make
+brew install cmake ninja       # Homebrew: https://brew.sh
+```
 
-This is a template repo!
+## Linux (Ubuntu / Debian)
+```bash
+sudo apt update
+sudo apt install -y \
+  cmake ninja-build clang lld \
+  libasound2-dev libx11-dev libxinerama-dev libxext-dev \
+  libfreetype6-dev libwebkit2gtk-4.1-dev libglu1-mesa-dev
+```
 
-That means you can click "[Use this template](https://github.com/sudara/pamplejuce/generate)" here or at the top of the page to get your own copy (not fork) of the repo. Then you can make it private or keep it public, up to you.
+## Windows
+Install in this order:
+1. **[Visual Studio 2022](https://visualstudio.microsoft.com/)** with the "Desktop development with C++" workload (provides MSVC + the Windows SDK).
+2. **[CMake](https://cmake.org/download/)** (add to PATH during install).
+3. **[Ninja](https://github.com/ninja-build/ninja/releases)** on PATH (or `choco install ninja`).
+4. **[Git for Windows](https://git-scm.com/download/win)** if you don't already have it.
 
-Then check out the [documentation](https://melatonin.dev/manuals/pamplejuce/setting-your-project-up/) so you know what to tweak. 
+### 4. Install the pre-commit hook (one-time, per clone)
+The hook lives in `.githooks/pre-commit` and refuses commits whose staged C/C++ files aren't clang-format clean. It just needs to be wired up:
+```bash
+git config core.hooksPath .githooks
+```
+
+Verify with `git config --get core.hooksPath` — should print `.githooks`. The hook self-documents its install instructions at the top of the file.
+
+### 5. Build
+VS Code is the recommended dev loop (`F5` debug, `F7` build) — see below — but you can also build from the terminal:
+
+```bash
+cmake -B Builds -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build Builds
+ctest --test-dir Builds --output-on-failure
+```
+
+For a universal macOS binary, add `-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"` to the configure step.
+
+## Local development
+The repo ships a `.vscode/` config that gives you:
+
+- **`F7`** — runs the **Build** task (uses the existing `Builds/` configuration; run **CMake: Configure (Debug)** once first, or after CMakeLists.txt changes).
+- **`F5`** — debugs the Standalone app via CodeLLDB by default (path: `Builds/<PROJECT_NAME>_artefacts/Debug/Standalone/<PRODUCT_NAME>.app`). A cppdbg fallback launch config is also provided if you don't have CodeLLDB.
+- **clangd** as the IntelliSense provider (the Microsoft C/C++ extension's IntelliSense is disabled in workspace settings to avoid double-diagnostics; install [`llvm-vs-code-extensions.vscode-clangd`](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd) for full functionality).
+- Format-on-save via `.clang-format`.
 
 > [!NOTE]
-> Tests will immediately run and fail (go red) until you [set up code signing](https://melatonin.dev/manuals/pamplejuce/getting-started/code-signing/).
+> `F7` isn't a default VS Code keybinding for builds — to map it, add this to your **user** `keybindings.json`:
+> ```json
+> { "key": "f7", "command": "workbench.action.tasks.build" }
+> ```
+> `F5` is built-in (Debug: Start Debugging).
 
-## Having Issues?
+clangd may report false-positive errors like `'juce_audio_processors/juce_audio_processors.h' file not found` until the first successful Configure step generates `compile_commands.json` in `Builds/`. Ignore those unless the actual build fails.
 
-Thanks to everyone who has contributed to the repository. 
+## Binary assets
 
-This repository covers a _lot_ of ground. JUCE itself has a lot of surface area. It's a group effort to maintain the garden and keep things nice!
+JUCE can embed arbitrary binary files (images, sounds, fonts) directly into each plugin format, exposing them at runtime via the `BinaryData::` namespace. The `assets/` folder ships with a placeholder `images/pamplejuce.png` (the original Pamplejuce template banner) so the binary-data target always has at least one input — replace it with your own when you fork.
 
-If something isn't just working out of the box — *it's probably not just you* — others are running into the problem, too, I promise. Check out [the official docs](https://melatonin.dev/manuals/pamplejuce), then please do [open an issue](https://github.com/sudara/pamplejuce/issues/new)!
+Drop new files anywhere inside `assets/`. Subdirectories are flattened, so don't reuse the same basename across folders — the symbols would collide. On the next build they're auto-bundled:
+
+```
+assets/images/logo.png   →  BinaryData::logo_png   +  BinaryData::logo_pngSize
+assets/sounds/click.wav  →  BinaryData::click_wav  +  BinaryData::click_wavSize
+```
+
+Wired up by `cmake/Assets.cmake` (a recursive glob). `juce_add_binary_data()` requires at least one source file, which is why we ship the placeholder rather than leaving the folder empty.
+
+## CI
+
+Push to any branch or open a PR to trigger the full CI fan-out:
+- `build_and_test` — three platforms (Linux/macOS/Windows), `pluginval` validation, artifact upload
+- `sanitizers` — ASan / UBSan / TSan / RTSan (clang-20 for the latter)
+- `clang-tidy` — posts review comments on PRs
+
+The nightly workflow (`nightly.yml`) is currently disabled. Re-enable by uncommenting the cron block when active development pauses and external dependency drift becomes the main breakage risk.
 
 ## License
 

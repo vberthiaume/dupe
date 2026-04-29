@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Pre-commit hook: refuses commits whose staged C/C++ files aren't clang-format clean.
+#
+# Install (one-time):
+#   git config core.hooksPath .githooks
+#
+# This deliberately checks rather than auto-formats: auto-formatting staged
+# content gets confusing fast (the working tree and the staged content can
+# diverge), and surfacing the issue with a clear "run this to fix it" message
+# is less surprising.
+
+set -euo pipefail
+
+if ! command -v clang-format >/dev/null 2>&1; then
+    echo "pre-commit: clang-format not found on PATH." >&2
+    echo "  macOS:  brew install clang-format" >&2
+    echo "  Linux:  apt install clang-format    (or your distro's equivalent)" >&2
+    exit 1
+fi
+
+# Only consider files inside our owned trees — submodules and generated dirs
+# are skipped by virtue of not appearing here.
+mapfile -t staged < <(
+    git diff --cached --name-only --diff-filter=ACM \
+    | grep -E '^(source|tests|benchmarks)/.*\.(cpp|h|hpp|cc|c|cxx|hxx)$' \
+    || true
+)
+
+if [[ ${#staged[@]} -eq 0 ]]; then
+    exit 0
+fi
+
+unformatted=()
+for f in "${staged[@]}"; do
+    # Compare clang-format output against the working-tree file.
+    # (We're not checking the staged blob — small footgun if the working tree
+    # has uncommitted format-only changes ahead of staged content. Worth it
+    # for the simplicity; CI's clang-tidy job would catch anything that slips.)
+    if ! diff -q <(clang-format "$f") "$f" >/dev/null 2>&1; then
+        unformatted+=("$f")
+    fi
+done
+
+if [[ ${#unformatted[@]} -gt 0 ]]; then
+    echo "pre-commit: clang-format would change the following staged files:" >&2
+    printf '  %s\n' "${unformatted[@]}" >&2
+    echo >&2
+    echo "Fix with:" >&2
+    echo "  clang-format -i ${unformatted[*]}" >&2
+    echo "  git add ${unformatted[*]}" >&2
+    exit 1
+fi
