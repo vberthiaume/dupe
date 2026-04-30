@@ -10,18 +10,18 @@
 // expand to nothing there so the code still compiles and IDE noise is reduced.
 
 #if defined(__has_cpp_attribute)
-    #if __has_cpp_attribute(clang::nonblocking)
-        #define DUPE_RT_NONBLOCKING [[clang::nonblocking]]
-    #endif
-    #if __has_cpp_attribute(clang::blocking)
-        #define DUPE_RT_BLOCKING [[clang::blocking]]
-    #endif
+#if __has_cpp_attribute(clang::nonblocking)
+#define DUPE_RT_NONBLOCKING [[clang::nonblocking]]
+#endif
+#if __has_cpp_attribute(clang::blocking)
+#define DUPE_RT_BLOCKING [[clang::blocking]]
+#endif
 #endif
 
 #ifndef DUPE_RT_NONBLOCKING
-    #define DUPE_RT_NONBLOCKING
+#define DUPE_RT_NONBLOCKING
 #endif
 
 #ifndef DUPE_RT_BLOCKING
-    #define DUPE_RT_BLOCKING
+#define DUPE_RT_BLOCKING
 #endif

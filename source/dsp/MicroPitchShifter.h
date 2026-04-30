@@ -4,7 +4,7 @@
 #include <cmath>
 #include <vector>
 
-#include "../RealtimeAttributes.h"
+#include "../util/RealtimeAttributes.h"
 
 /**
     Rotational double-tap micro-pitch-shifter.
@@ -20,7 +20,7 @@
 template <typename SampleType>
 class MicroPitchShifter
 {
-  public:
+public:
     MicroPitchShifter() = default;
 
     void prepare (const juce::dsp::ProcessSpec& spec) DUPE_RT_BLOCKING
@@ -129,7 +129,7 @@ class MicroPitchShifter
             out[i] = processSample (in[i]);
     }
 
-  private:
+private:
     SampleType interpolate (SampleType pos) const noexcept DUPE_RT_NONBLOCKING
     {
         // Catmull-Rom cubic Hermite. Reads four samples around `pos`.
@@ -148,12 +148,8 @@ class MicroPitchShifter
 
         const auto c0 = y1;
         const auto c1 = SampleType (0.5) * (y2 - y0);
-        const auto c2 = y0
-                        - SampleType (2.5) * y1
-                        + SampleType (2) * y2
-                        - SampleType (0.5) * y3;
-        const auto c3 = SampleType (0.5) * (y3 - y0)
-                        + SampleType (1.5) * (y1 - y2);
+        const auto c2 = y0 - SampleType (2.5) * y1 + SampleType (2) * y2 - SampleType (0.5) * y3;
+        const auto c3 = SampleType (0.5) * (y3 - y0) + SampleType (1.5) * (y1 - y2);
 
         return ((c3 * frac + c2) * frac + c1) * frac + c0;
     }

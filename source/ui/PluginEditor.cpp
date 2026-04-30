@@ -1,7 +1,6 @@
 #include "PluginEditor.h"
 
-PluginEditor::PluginEditor (PluginProcessor& p)
-    : AudioProcessorEditor (&p), processorRef (p)
+PluginEditor::PluginEditor (PluginProcessor& p) : AudioProcessorEditor (&p), processorRef (p)
 {
     auto setupRotary = [this] (juce::Slider& s)
     {
@@ -13,14 +12,12 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     setupRotary (pitchSlider);
     setupRotary (mixSlider);
 
-    pitchAttachment = std::make_unique<SliderAttachment> (
-        processorRef.apvts, Parameters::pitchID, pitchSlider);
-    mixAttachment = std::make_unique<SliderAttachment> (
-        processorRef.apvts, Parameters::mixID, mixSlider);
+    pitchAttachment = std::make_unique<SliderAttachment> (processorRef.apvts, Parameters::pitchID, pitchSlider);
+    mixAttachment   = std::make_unique<SliderAttachment> (processorRef.apvts, Parameters::mixID, mixSlider);
 
     addAndMakeVisible (monoListenButton);
-    monoListenAttachment = std::make_unique<ButtonAttachment> (
-        processorRef.apvts, Parameters::monoListenID, monoListenButton);
+    monoListenAttachment
+        = std::make_unique<ButtonAttachment> (processorRef.apvts, Parameters::monoListenID, monoListenButton);
 
     auto setupLabel = [this] (juce::Label& l)
     {
@@ -36,7 +33,7 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     {
         if (! inspector)
         {
-            inspector = std::make_unique<melatonin::Inspector> (*this);
+            inspector          = std::make_unique<melatonin::Inspector> (*this);
             inspector->onClose = [this] { inspector.reset(); };
         }
         inspector->setVisible (true);
@@ -62,7 +59,7 @@ void PluginEditor::resized()
 
     area.removeFromBottom (8);
 
-    auto knobs = area;
+    auto knobs     = area;
     auto pitchArea = knobs.removeFromLeft (knobs.getWidth() / 2);
 
     pitchLabel.setBounds (pitchArea.removeFromTop (24));

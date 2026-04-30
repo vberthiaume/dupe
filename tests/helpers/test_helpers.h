@@ -1,5 +1,5 @@
 #pragma once
-#include <PluginProcessor.h>
+#include <dsp/PluginProcessor.h>
 
 /* This is a helper function to run tests within the context of a plugin editor.
  *
@@ -22,7 +22,7 @@
 [[maybe_unused]] static void runWithinPluginEditor (const std::function<void (PluginProcessor& plugin)>& testCode)
 {
     PluginProcessor plugin;
-    const auto editor = plugin.createEditorIfNeeded();
+    const auto      editor = plugin.createEditorIfNeeded();
 
     testCode (plugin);
 

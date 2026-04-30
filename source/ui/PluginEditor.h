@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PluginProcessor.h"
+#include "../dsp/PluginProcessor.h"
 #include "BinaryData.h"
 #include "melatonin_inspector/melatonin_inspector.h"
 
@@ -21,17 +21,17 @@ private:
 
     juce::Slider       pitchSlider;
     juce::Slider       mixSlider;
-    juce::ToggleButton monoListenButton  { "Mono Listen" };
+    juce::ToggleButton monoListenButton { "Mono Listen" };
 
-    juce::Label        pitchLabel        { {}, "Pitch" };
-    juce::Label        mixLabel          { {}, "Mix" };
+    juce::Label pitchLabel { {}, "Pitch" };
+    juce::Label mixLabel { {}, "Mix" };
 
     std::unique_ptr<SliderAttachment> pitchAttachment;
     std::unique_ptr<SliderAttachment> mixAttachment;
     std::unique_ptr<ButtonAttachment> monoListenAttachment;
 
     std::unique_ptr<melatonin::Inspector> inspector;
-    juce::TextButton   inspectButton     { "Inspect the UI" };
+    juce::TextButton                      inspectButton { "Inspect the UI" };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
 };
