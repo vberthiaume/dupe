@@ -23,7 +23,7 @@ class MicroPitchShifter
 public:
     MicroPitchShifter() = default;
 
-    void prepare (const juce::dsp::ProcessSpec& spec) DUPE_RT_BLOCKING
+    void prepare (const juce::dsp::ProcessSpec& spec) RTSAN_BLOCKING
     {
         const auto bufferSamples = static_cast<int> ((bufferLengthMs * 0.001) * spec.sampleRate);
 
@@ -47,7 +47,7 @@ public:
         ratio                         = std::pow (SampleType (2), static_cast<SampleType> (cents) / centsPerOctave);
     }
 
-    SampleType processSample (SampleType input) noexcept DUPE_RT_NONBLOCKING
+    SampleType processSample (SampleType input) noexcept RTSAN_NONBLOCKING
     {
         // Write input into the ring buffer first.
         buffer[static_cast<size_t> (writePos)] = input;
@@ -108,7 +108,7 @@ public:
     }
 
     template <typename ProcessContext>
-    void process (const ProcessContext& context) noexcept DUPE_RT_NONBLOCKING
+    void process (const ProcessContext& context) noexcept RTSAN_NONBLOCKING
     {
         const auto& inputBlock  = context.getInputBlock();
         auto&       outputBlock = context.getOutputBlock();
@@ -130,7 +130,7 @@ public:
     }
 
 private:
-    SampleType interpolate (SampleType pos) const noexcept DUPE_RT_NONBLOCKING
+    SampleType interpolate (SampleType pos) const noexcept RTSAN_NONBLOCKING
     {
         // Catmull-Rom cubic Hermite. Reads four samples around `pos`.
         const auto pos1 = static_cast<int> (pos);

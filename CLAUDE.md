@@ -86,6 +86,7 @@ For anything in the audio thread / hot DSP path (e.g. `processBlock`):
 - Avoid dynamic allocations and container growth (`std::vector::push_back`, map insertion, string building)
 - Prefer fixed-size storage (`std::array`, preallocated buffers, fixed-capacity queues)
 - Keep operations deterministic and lock-free where possible
+- Annotate hot-path functions with `RTSAN_NONBLOCKING` (and explicit boundaries with `RTSAN_BLOCKING`) from `source/util/RealtimeAttributes.h` so RealtimeSanitizer can analyse them. The macros expand to `[[clang::nonblocking]]` / `[[clang::blocking]]` on Clang ≥ 20, nothing elsewhere.
 
 ## Code Style
 

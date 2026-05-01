@@ -1,9 +1,9 @@
 #pragma once
 
 // Function-effect attributes consumed by Clang's RealtimeSanitizer (RTSan),
-// upstreamed in LLVM 20. Annotating a function as DUPE_RT_NONBLOCKING tells
+// upstreamed in LLVM 20. Annotating a function as RTSAN_NONBLOCKING tells
 // RTSan that the body and its transitive callees must not block (no allocs,
-// locks, syscalls, etc). DUPE_RT_BLOCKING marks an explicit boundary where
+// locks, syscalls, etc). RTSAN_BLOCKING marks an explicit boundary where
 // blocking is allowed and analysis should stop descending.
 //
 // Older Clang (and non-Clang compilers) don't recognize the attributes; we
@@ -11,17 +11,17 @@
 
 #if defined(__has_cpp_attribute)
 #if __has_cpp_attribute(clang::nonblocking)
-#define DUPE_RT_NONBLOCKING [[clang::nonblocking]]
+#define RTSAN_NONBLOCKING [[clang::nonblocking]]
 #endif
 #if __has_cpp_attribute(clang::blocking)
-#define DUPE_RT_BLOCKING [[clang::blocking]]
+#define RTSAN_BLOCKING [[clang::blocking]]
 #endif
 #endif
 
-#ifndef DUPE_RT_NONBLOCKING
-#define DUPE_RT_NONBLOCKING
+#ifndef RTSAN_NONBLOCKING
+#define RTSAN_NONBLOCKING
 #endif
 
-#ifndef DUPE_RT_BLOCKING
-#define DUPE_RT_BLOCKING
+#ifndef RTSAN_BLOCKING
+#define RTSAN_BLOCKING
 #endif
