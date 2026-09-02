@@ -63,7 +63,7 @@ add_subdirectory (modules/melatonin_inspector)
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_plugin("${PROJECT_NAME}"
     # Icons for the standalone app
-    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/packaging/icon.png"
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/assets/images/logo.png"
 
     COMPANY_NAME "${COMPANY_NAME}"
     BUNDLE_ID "${BUNDLE_ID}"
