@@ -95,7 +95,7 @@ To cut a release:
 The `v` prefix is required; a bare `0.1.0` tag won't trigger the release job.
 
 ## License
-Dupe is released under the [GNU Affero General Public License, version 3](LICENSE) (AGPLv3). Copyright (C) 2026 BMP4 Studios.
+Dupe is released under the [GNU Affero General Public License, version 3](LICENSE) (AGPLv3). Copyright (C) 2026 Vincent Berthiaume.
 
 This project links against [JUCE](https://juce.com/), used under the AGPLv3 free-use option of JUCE Ltd's dual-license terms.
 
